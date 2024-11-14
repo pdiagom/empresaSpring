@@ -1,5 +1,6 @@
 package com.example.empresaspring.entity;
 import com.example.empresaspring.exception.DatosNoCorrectosException;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import lombok.Data;
@@ -14,6 +15,7 @@ import lombok.AllArgsConstructor;
 public class Empleado extends Persona {
 
     private int categoria;
+    @Column(name="anyos_trabajados")
     private int anyos;
 
     /**

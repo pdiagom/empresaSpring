@@ -5,7 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 
 @SpringBootApplication
-@EntityScan(basePackages = {"empresa.*"})
+@EntityScan(basePackages = {"com.example.empresaspring.*"})
 public class EmpresaSpringApplication {
 
     public static void main(String[] args) {
