@@ -14,18 +14,25 @@ import lombok.NoArgsConstructor;
 public abstract class Persona {
 
     @Id
+
     private String dni;
 
     private String nombre;
-    @Column(name="genero")
-    private String sexo;
+    private String genero;
 
-    public Persona(String nombre, String sexo) {
+    public Persona(String nombre, String genero) {
         this.nombre = nombre;
-        this.sexo = sexo;
+        this.genero = genero;
     }
 
     public void imprime() {
         System.out.println(nombre + " " + dni);
+    }
+    public String getDni() {
+        return dni;
+    }
+
+    public void setDni(String dni) {
+        this.dni = dni;
     }
 }
