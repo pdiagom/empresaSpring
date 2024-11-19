@@ -1,67 +1,139 @@
 package com.example.empresaspring.service;
 
+import com.example.empresaspring.DTO.EmpleadoDTO;
 import com.example.empresaspring.entity.Empleado;
+import com.example.empresaspring.exception.NotFoundException;
 import com.example.empresaspring.repository.EmpleadoRepository;
-import com.example.empresaspring.repository.EmpleadoSpecification;
-import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.sql.SQLException;
 import java.util.List;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
-public class EmpleadoServiceImpl implements EmpleadoService {
+public class EmpleadoServiceImpl implements EmpleadoService{
 
     @Autowired
     private EmpleadoRepository empleadoRepository;
 
-    @Override
-    @Transactional
-    public boolean guardar(Empleado empleado) {
-        empleadoRepository.save(empleado);
-        return true;
+    /**
+     * Obtiene la lista de todos los empleados como DTOs.
+     *
+     * @return Lista de empleados.
+     */
+    public List<EmpleadoDTO> obtenerEmpleados() {
+        return empleadoRepository.findAll().stream()
+                .map(this::convertirAEmpleadoDTO)
+                .collect(Collectors.toList());
     }
 
-    @Override
-    @Transactional
-    public boolean editar(Empleado empleado) {
-        Optional<Empleado> empleadoExistente = empleadoRepository.findById(empleado.getDni());
-        if (empleadoExistente.isPresent()) {
-            Empleado existente = empleadoExistente.get();
-            existente.setNombre(empleado.getNombre());
-            existente.setGenero(empleado.getGenero());
-            existente.setCategoria(empleado.getCategoria());
-            existente.setAnyos(empleado.getAnyos());
-            empleadoRepository.save(existente);
-            return true;
+    /**
+     * Crea un nuevo empleado a partir de un DTO.
+     *
+     * @param empleadoDTO Datos del nuevo empleado.
+     * @return El DTO del empleado creado.
+     */
+    public EmpleadoDTO crear(EmpleadoDTO empleadoDTO) {
+        Empleado empleado = convertirAEmpleadoEntidad(empleadoDTO);
+        Empleado empleadoGuardado = empleadoRepository.save(empleado);
+        return convertirAEmpleadoDTO(empleadoGuardado);
+    }
+
+    /**
+     * Obtiene un empleado por DNI.
+     *
+     * @param dni El DNI del empleado.
+     * @return El DTO del empleado.
+     * @throws NotFoundException Si el empleado no existe.
+     */
+    public EmpleadoDTO obtenerEmpleado(String dni) {
+        Empleado empleado = empleadoRepository.findById(dni)
+                .orElseThrow(() -> new NotFoundException("Empleado no encontrado con DNI: " + dni));
+        return convertirAEmpleadoDTO(empleado);
+    }
+
+    /**
+     * Obtiene empleados filtrados según un criterio.
+     *
+     * @param criterio El criterio de filtrado.
+     * @param valor    El valor a buscar.
+     * @return Lista de empleados que cumplen el criterio.
+     */
+    public List<EmpleadoDTO> obtenerEmpleadosFiltrados(String criterio, String valor) {
+        List<Empleado> empleados;
+        switch (criterio) {
+            case "dni":
+                empleados = empleadoRepository.findByDniContainingIgnoreCase(valor);
+                break;
+            case "nombre":
+                empleados = empleadoRepository.findByNombreContaining(valor);
+                break;
+            case "sexo":
+                empleados = empleadoRepository.findBySexo(valor);
+                break;
+            case "categoria":
+                empleados = empleadoRepository.findByCategoria(Integer.parseInt(valor));
+                break;
+            case "anyos_trabajados":
+                empleados = empleadoRepository.findByAnyos(Integer.parseInt(valor));
+                break;
+            default:
+                throw new IllegalArgumentException("Criterio de búsqueda inválido: " + criterio);
         }
-        return false;
+        return empleados.stream().map(this::convertirAEmpleadoDTO).collect(Collectors.toList());
     }
 
-    @Override
-    @Transactional
-    public boolean eliminar(String dni) {
-        Optional<Empleado> empleado = empleadoRepository.findById(dni);
-        if (empleado.isPresent()) {
-            empleadoRepository.delete(empleado.get());
-            return true;
+    /**
+     * Edita los datos de un empleado existente.
+     *
+     * @param empleadoDTO Los nuevos datos del empleado.
+     * @return El DTO del empleado actualizado.
+     * @throws NotFoundException Si el empleado no existe.
+     */
+    public EmpleadoDTO editar(String dni, EmpleadoDTO empleadoDTO) {
+        Empleado empleado = empleadoRepository.findById(dni)
+                .orElseThrow(() -> new NotFoundException("Empleado no encontrado con DNI: " + empleadoDTO.getDni()));
+
+        empleado.setNombre(empleadoDTO.getNombre());
+        empleado.setSexo(empleadoDTO.getSexo());
+        empleado.setCategoria(empleadoDTO.getCategoria());
+        empleado.setAnyos(empleadoDTO.getAnyos());
+
+        Empleado empleadoActualizado = empleadoRepository.save(empleado);
+        return convertirAEmpleadoDTO(empleadoActualizado);
+    }
+
+    /**
+     * Elimina un empleado por su DNI.
+     *
+     * @param dni El DNI del empleado a eliminar.
+     * @throws NotFoundException Si el empleado no existe.
+     */
+    public void eliminar(String dni) {
+        if (!empleadoRepository.existsById(dni)) {
+            throw new NotFoundException("Empleado no encontrado con DNI: " + dni);
         }
-        return false;
+        empleadoRepository.deleteById(dni);
     }
 
-    @Override
-    public List<Empleado> obtenerEmpleados() {
-        return empleadoRepository.findAll();
+    // Métodos auxiliares para convertir entre Empleado y EmpleadoDTO
+    private EmpleadoDTO convertirAEmpleadoDTO(Empleado empleado) {
+        return new EmpleadoDTO(
+                empleado.getDni(),
+                empleado.getNombre(),
+                empleado.getSexo(),
+                empleado.getCategoria(),
+                empleado.getAnyos()
+        );
     }
 
-    @Override
-    public Optional<Empleado> obtenerEmpleado(String dni) throws SQLException {return empleadoRepository.findById(dni);
-    }
-
-    @Override
-    public List<Empleado> obtenerEmpleadosFiltrados(String criterio, String valor) {
-        return empleadoRepository.findAll(EmpleadoSpecification.filtroPorCriterio(criterio, valor));
+    private Empleado convertirAEmpleadoEntidad(EmpleadoDTO empleadoDTO) {
+        return new Empleado(
+                empleadoDTO.getDni(),
+                empleadoDTO.getNombre(),
+                empleadoDTO.getSexo(),
+                empleadoDTO.getCategoria(),
+                empleadoDTO.getAnyos()
+        );
     }
 }
