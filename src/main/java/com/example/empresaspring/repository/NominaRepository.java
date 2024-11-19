@@ -4,4 +4,5 @@ import com.example.empresaspring.entity.Nomina;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface NominaRepository extends JpaRepository<Nomina,String> {
+    Nomina findByDni(String dni);
 }

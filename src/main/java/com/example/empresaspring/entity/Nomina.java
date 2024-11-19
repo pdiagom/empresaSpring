@@ -1,44 +1,53 @@
 package com.example.empresaspring.entity;
+
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
+import java.io.Serializable;
+
 
 /**
- * La clase {@code Nomina} se encarga de calcular el sueldo de un empleado
- * en función de su categoría y años de servicio.
- * Contiene una lista de sueldos base predefinidos para cada categoría.
+ * La clase {@code Nomina} representa los datos de una nómina
+ * generada para un empleado, incluyendo su sueldo y la fecha.
  */
 @Entity
+@Table(name = "nominas")
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
-@Table(name = "nominas")
-public class Nomina {
+public class Nomina implements Serializable {
 
+    /**
+     * Identificador único de la nómina, autogenerado.
+     */
     @Id
-    private Long id_nomina;  // ID único de la nómina
-
-
-    @ManyToOne
-    private Empleado empleado;  // Relación con la entidad Empleado
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_nomina")
+    private Long idNomina;
 
     /**
-     * Sueldo base para cada categoría de empleado.
+     * Relación con el empleado asociado a esta nómina (por DNI).
      */
-    private static final int[] SUELDO_BASE = {
-            50000, 70000, 90000, 110000, 130000,
-            150000, 170000, 190000, 210000, 230000
-    };
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "dni", referencedColumnName = "dni", nullable = false)
+    private Empleado empleado;
+
+    @Column(name="dni", insertable = false, updatable = false)
+    private String dni;
+    /**
+     * Sueldo total del empleado.
+     */
+    @Column(name = "sueldo", nullable = false)
+    private int sueldo;
 
     /**
-     * Calcula el sueldo total de un empleado basado en su categoría
-     * y sus años de servicio.
+     * Constructor que crea una nueva nómina asociada a un empleado.
      *
-     * @return El sueldo total del empleado, que incluye el sueldo base
-     *         y un incremento por cada año de servicio.
+     * @param empleado El empleado al que pertenece la nómina.
+     * @param sueldo   El sueldo del empleado.
      */
-    public int calcularSueldo() {
-        return SUELDO_BASE[empleado.getCategoria() - 1] + 5000 * getEmpleado().getAnyos();
+    public Nomina(Empleado empleado, int sueldo) {
+        this.empleado = empleado;
+        this.dni=empleado.getDni();
+        this.sueldo = sueldo;
     }
 }
