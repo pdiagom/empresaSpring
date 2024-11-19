@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
  * Controlador REST para gestionar las nóminas.
  */
 @RestController
-@RequestMapping("/nominas")
+@RequestMapping("/empresa/nominas")
 public class NominaController {
 
     @Autowired
